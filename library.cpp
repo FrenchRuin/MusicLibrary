@@ -1,8 +1,9 @@
 
 #include "library.h"
+#include "string_tools.h"
 
 #define NUM_CHARS 256    // 2^8 = 256
-
+#define BUFFER_LENGTH 200
 
 Artist *artist_directory[NUM_CHARS];
 int num_index = 0;
@@ -14,6 +15,40 @@ void print_song(Song *ptr_song);
 void initialize() {
     for (int i = 0; i < NUM_CHARS; i++) {
         artist_directory[i] = NULL;
+    }
+}
+
+void load(FILE *fp)
+{
+    char buffer[BUFFER_LENGTH];
+    char *name, *title, *path;
+
+    while (1) {  // infinite loop
+        if (read_line(fp, buffer, BUFFER_LENGTH) <= 0)   // get a line
+            break;
+
+        name = strtok(buffer, "#");
+        if (strcmp(name, " ") == 0) {
+            name = NULL;
+        } else {
+            name = strdup(name);
+        }
+
+        title = strtok(NULL, "#");
+        if (strcmp(title, " ") == 0) {
+            title = NULL;
+        } else {
+            title = strdup(title);
+        }
+
+        path = strtok(NULL, "#");
+        if (strcmp(path, " ") == 0) {
+            path = NULL;
+        } else {
+            path = strdup(path);
+        }
+
+        add_song(name, title, path);
     }
 }
 

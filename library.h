@@ -30,6 +30,7 @@ Artist *find_artist(char *name);
 void add_song(char *artist, char *title, char *path);
 void initialize();
 void status();
+void load(FILE *fp);
 
 #endif
 
