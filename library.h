@@ -2,44 +2,34 @@
 #define LIBRARY_H
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct song Song;
-typedef struct artist Artist;
 typedef struct snode SNode;
+typedef struct artist Artist;
 
-struct song{
-    int index;
-    char *title;
+
+struct song {
     Artist *artist;
+    char *title;
     char *path;
+    int index;
 };
 
-struct snode{
+struct snode {
+    struct snode *next, *prev;
     Song *song;
-    struct snode *prev, *next;
 };
-
-struct artist{
+struct artist {
     char *name;
-    Artist *next;
-    SNode *head,*tail;
+    struct artist *next;
+    SNode *head, *tail;
 };
-
-void initialize();
-
-void search_song_by_name(char *name);
-
-void search_song_by_name_title(char *name, char *title);
-
+Artist *find_artist(char *name);
 void add_song(char *artist, char *title, char *path);
-
-int remove_song(int id);
-
-void play(int id);
-
+void initialize();
 void status();
-
-void load(FILE *fp);
 
 #endif
 

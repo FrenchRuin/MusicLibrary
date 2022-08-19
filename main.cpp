@@ -11,6 +11,7 @@ void process_command();
 void handle_add();
 
 int main() {
+    initialize();
     process_command();
 
 }
@@ -32,13 +33,13 @@ void process_command() {
             handle_search();
         } else if (strcmp(command, "delete") == 0) {
             handle_delete();
-        } else if (strcmp(command, "status") == 0) {
-            handle_status();
         } else if (strcmp(command, "play") == 0) {
             handle_play();
         } else if (strcmp(command, "save") == 0) {
             handle_save();
              */
+        } else if (strcmp(command, "status") == 0) {
+            status();
         } else if (strcmp(command, "exit") == 0) {
             break;
         }
