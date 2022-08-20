@@ -14,6 +14,14 @@ void handle_add();
 
 void handle_load();
 
+void handle_search();
+
+void handle_play();
+
+void handle_save();
+
+void handle_remove();
+
 int main() {
     initialize();
     handle_load();
@@ -49,22 +57,67 @@ void process_command() {
         command = strtok(command_line, " ");
         if (strcmp(command, "add") == 0) {
             handle_add();
-            /*
         } else if (strcmp(command, "search") == 0) {
             handle_search();
         } else if (strcmp(command, "delete") == 0) {
-            handle_delete();
+            void handle_remove();
+        } else if (strcmp(command, "save") == 0) {
+            char *tmp = strtok(NULL, " ");
+            if (strcmp(tmp, "as") != 0) {
+                continue;
+            }
+            handle_save();
         } else if (strcmp(command, "play") == 0) {
             handle_play();
-        } else if (strcmp(command, "save") == 0) {
-            handle_save();
-             */
         } else if (strcmp(command, "status") == 0) {
             status();
         } else if (strcmp(command, "exit") == 0) {
             break;
         }
     }
+}
+
+void handle_remove()
+{
+    char *id_str = strtok(NULL, " ");
+    int index = atoi(id_str);
+    remove(index);
+}
+
+void handle_save() {
+    char *file_name = strtok(NULL, " ");
+    FILE *fp = fopen(file_name, "w");
+    save(fp);
+    fclose(fp);
+}
+
+
+void handle_play() {
+    char *id_str = strtok(NULL, " ");
+    int index = atoi(id_str);
+    play(index);
+}
+
+
+void handle_search() {
+    char name[BUFFER_LENGTH], title[BUFFER_LENGTH];
+
+    printf("     Artist: ");
+    if (read_line(stdin, name, BUFFER_LENGTH) <= 0) {
+        printf("      Artist name required.\n");
+        return;
+    }
+
+    printf("     Title: ");
+    int title_len = read_line(stdin, title, BUFFER_LENGTH);
+
+    if (title_len <= 0) {
+        search_song(name);
+
+    } else {
+        search_song(name, title);
+    }
+
 }
 
 void handle_add() {

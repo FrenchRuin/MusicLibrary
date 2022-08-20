@@ -26,11 +26,26 @@ struct artist {
     struct artist *next;
     SNode *head, *tail;
 };
+
 Artist *find_artist(char *name);
+
 void add_song(char *artist, char *title, char *path);
+
 void initialize();
+
 void status();
+
 void load(FILE *fp);
+
+void search_song(char *name, char *title);
+
+void search_song(char *name);
+
+void play(int index);
+
+void save(FILE *fp);
+
+void remove(int index);
 
 #endif
 

@@ -1,25 +1,47 @@
 
 #include "library.h"
 #include "string_tools.h"
+#include <windows.h>
 
 #define NUM_CHARS 256    // 2^8 = 256
+#define SIZE_INDEX_TABLE 100
 #define BUFFER_LENGTH 200
 
 Artist *artist_directory[NUM_CHARS];
+SNode *index_directory[SIZE_INDEX_TABLE];
+
+
 int num_index = 0;
 
 void insert_node(Artist *ptr_artist, SNode *ptr_snode);
+
+void insert_to_index_directory(Song *ptr_song);
+
 void print_artist(Artist *p);
+
 void print_song(Song *ptr_song);
+
+SNode *find_snode(Artist *ptr_artist, char *title);
+
+void save_artist(Artist *p, FILE *fp);
+
+void save_song(Song *ptr_song, FILE *fp);
+
+void remove_snode(Artist *ptr_artist, SNode *ptr_snode);
+
+void destroy_song(Song *ptr_song);
+
 
 void initialize() {
     for (int i = 0; i < NUM_CHARS; i++) {
         artist_directory[i] = NULL;
     }
+    for (int j = 0; j < SIZE_INDEX_TABLE; j++) {
+        index_directory[j] = NULL;
+    }
 }
 
-void load(FILE *fp)
-{
+void load(FILE *fp) {
     char buffer[BUFFER_LENGTH];
     char *name, *title, *path;
 
@@ -50,6 +72,51 @@ void load(FILE *fp)
 
         add_song(name, title, path);
     }
+}
+
+void search_song(char *artist, char *title) {
+    Artist *ptr_artist = find_artist(artist);
+
+    if (ptr_artist == NULL) {
+        printf("No such Artist exists.\n");
+        return;
+    }
+
+    SNode *ptr_snode = find_snode(ptr_artist, title);
+    while (ptr_snode != NULL && strcmp(ptr_snode->song->title, title) != 0) {
+        ptr_snode = ptr_snode;
+    }
+
+    if (ptr_snode != NULL && strcmp(ptr_snode->song->title, title) == 0) {
+        printf("Found:\n");
+        print_song(ptr_snode->song);
+    } else {
+        printf("No such song exists.\n");
+        return;
+    }
+}
+
+SNode *find_snode(Artist *ptr_artist, char *title) {
+    SNode *ptr_snode = ptr_artist->head;
+    while (ptr_snode != NULL && strcmp(ptr_snode->song->title, title) != 0) {
+        ptr_snode = ptr_snode;
+    }
+    if (ptr_snode != NULL && strcmp(ptr_snode->song->title, title) == 0) {
+        return ptr_snode;
+    } else {
+        return NULL;
+    }
+}
+
+void search_song(char *artist) {
+    Artist *ptr_artist = find_artist(artist);
+
+    if (ptr_artist == NULL) {
+        printf("No such Artist exists.\n");
+        return;
+    }
+    printf("Found:\n");
+    print_artist(ptr_artist);
 }
 
 Artist *create_artist_instance(char *name) {
@@ -114,7 +181,33 @@ void add_song(char *artist, char *title, char *path) {
 
     // insert node
     insert_node(ptr_artist, ptr_snode);
+    insert_to_index_directory(ptr_song);
 }
+
+void insert_to_index_directory(Song *ptr_song) {
+    SNode *ptr_snode = (SNode *) malloc(sizeof(SNode));
+    ptr_snode->song = ptr_song;
+    ptr_snode->next = NULL;
+    ptr_snode->prev = NULL;     // unused
+
+    int index = ptr_song->index % SIZE_INDEX_TABLE;
+
+    // add the snode into the single linked list at index_directory[index]
+    SNode *p = index_directory[index];
+    SNode *q = NULL;
+    while (p != NULL && strcmp(p->song->title, ptr_song->title) < 0) {
+        q = p;
+        p = p->next;
+    }
+    if (q == NULL) { // add first
+        ptr_snode->next = p;
+        index_directory[index] = ptr_snode;
+    } else { // add after q
+        ptr_snode->next = p;
+        q->next = ptr_snode;
+    }
+}
+
 
 void insert_node(Artist *ptr_artist, SNode *ptr_snode) {
     SNode *p = ptr_artist->head;
@@ -165,8 +258,7 @@ void status() {
     }
 }
 
-void print_artist(Artist *p)
-{
+void print_artist(Artist *p) {
     printf("%s\n", p->name);
     SNode *ptr_snode = p->head;
     while (ptr_snode != NULL) {
@@ -175,7 +267,121 @@ void print_artist(Artist *p)
     }
 }
 
-void print_song(Song *ptr_song)
-{
-    printf("    %d: %s, %s\n",ptr_song->index, ptr_song->title, ptr_song->path);
+void print_song(Song *ptr_song) {
+    printf("    %d: %s, %s\n", ptr_song->index, ptr_song->title, ptr_song->path);
+}
+
+SNode *find_song(int index) {
+    SNode *ptr_snode = index_directory[index % SIZE_INDEX_TABLE];
+    while (ptr_snode != NULL && ptr_snode->song->index != index) {
+        ptr_snode = ptr_snode->next;
+    }
+    return ptr_snode;
+}
+
+void play(int index) {
+    SNode *ptr_snode = find_song(index);
+    if (ptr_snode == NULL) {
+        printf("No such song exists.\n");
+    }
+    printf("Found the song : %s", ptr_snode->song->title);
+    ShellExecute(GetDesktopWindow(), "open", ptr_snode->song->path, NULL, NULL, SW_SHOW);
+}
+
+void save(FILE *fp) {
+    for (int i = 0; i < NUM_CHARS; i++) {
+        Artist *p = artist_directory[i];
+        while (p != NULL) {
+            save_artist(p, fp);
+            p = p->next;
+        }
+    }
+}
+
+void save_artist(Artist *p, FILE *fp) {
+    SNode *ptr_snode = p->head;
+    while (ptr_snode != NULL) {
+        save_song(ptr_snode->song, fp);
+        ptr_snode = ptr_snode->next;
+    }
+}
+
+void save_song(Song *ptr_song, FILE *fp) {
+    if (ptr_song->artist != NULL) {
+        fprintf(fp, "%s#", ptr_song->artist->name);
+    } else {
+        fprintf(fp, " #");
+    }
+    if (ptr_song->title != NULL) {
+        fprintf(fp, "%s#", ptr_song->title);
+    } else {
+        fprintf(fp, " #");
+    }
+    if (ptr_song->path != NULL) {
+        fprintf(fp, "%s#", ptr_song->path);
+    } else {
+        fprintf(fp, " #\n");
+
+    }
+}
+
+void remove(int index) {
+    SNode *q = NULL; // previous to p
+    SNode *p = index_directory[index % SIZE_INDEX_TABLE]; // head node
+    while (p != NULL && p->song->index != index) {
+        q = p;
+        p = p->next;
+    }
+
+    if (p == NULL) { // either empty list or not exist
+        printf("No such song exists.\n");
+        return;
+    }
+
+    Song *ptr_song = p->song;
+    if (q == NULL) {  // remove first
+        index_directory[index % SIZE_INDEX_TABLE] = p->next;
+    } else {          // remove after q
+        q->next = p->next; // q->next = q->next->next;
+    }
+    free(p);
+
+    Artist *ptr_artist = ptr_song->artist;
+    // find the snode in the double linked list of ptr_artist
+    SNode *ptr_snode = find_snode(ptr_artist, ptr_song->title);
+    if (ptr_snode == NULL) {
+        printf("Not found snode - something wrong.\n");
+        return;
+    }
+
+    remove_snode(ptr_artist, ptr_snode);
+    destroy_song(ptr_song);
+}
+
+void destroy_song(Song *ptr_song) {
+
+    if (ptr_song->title != NULL) {
+        free(ptr_song->title);
+    }
+    if (ptr_song->path != NULL) {
+        free(ptr_song->path);
+    }
+    free(ptr_song);
+}
+
+void remove_snode(Artist *ptr_artist, SNode *ptr_snode) {
+
+    SNode *first = ptr_artist->head;
+    SNode *last = ptr_artist->tail;
+    if (first == ptr_snode && last == ptr_snode) { // unique node
+
+    } else if (first == ptr_snode) { // remove first
+
+    } else if (last == ptr_snode) {  // remove last
+
+    } else {                           // in the middle
+
+    }
+    free(ptr_snode);
+
 }
