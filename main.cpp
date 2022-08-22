@@ -60,7 +60,7 @@ void process_command() {
         } else if (strcmp(command, "search") == 0) {
             handle_search();
         } else if (strcmp(command, "delete") == 0) {
-            void handle_remove();
+            handle_remove();
         } else if (strcmp(command, "save") == 0) {
             char *tmp = strtok(NULL, " ");
             if (strcmp(tmp, "as") != 0) {

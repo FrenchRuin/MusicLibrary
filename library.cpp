@@ -374,14 +374,17 @@ void remove_snode(Artist *ptr_artist, SNode *ptr_snode) {
     SNode *first = ptr_artist->head;
     SNode *last = ptr_artist->tail;
     if (first == ptr_snode && last == ptr_snode) { // unique node
-
+        free(ptr_snode);
     } else if (first == ptr_snode) { // remove first
-
+        first->next = ptr_snode->next;
+        free(ptr_snode);
     } else if (last == ptr_snode) {  // remove last
-
+        last->prev = ptr_snode->prev;
+        free(ptr_snode);
     } else {                           // in the middle
-
+        ptr_snode->prev->next = ptr_snode->next;
+        ptr_snode->next->prev = ptr_snode->prev;
+        free(ptr_snode);
     }
-    free(ptr_snode);
 
 }
